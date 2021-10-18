@@ -1,5 +1,7 @@
 'use strict';
 
+const path = require("path");
+
 // Based on the NormalModuleReplacementPlugin plugin.
 class NativeScriptHTTPPlugin {
     constructor() {
@@ -18,14 +20,19 @@ class NativeScriptHTTPPlugin {
 
     apply(compiler) {
         const resourceRegExp = /http-request|image-cache/;
+        const seperatorRegExp = new RegExp(`\\${path.sep}`, 'g')
         compiler.hooks.normalModuleFactory.tap(
             "NativeScriptHTTPPlugin",
             nmf => {
                 nmf.hooks.beforeResolve.tap("NativeScriptHTTPPlugin", result => {
-                    if (!result) return;
+                    if (!result) return; 
 
                     // Replace http-request imports by our own.
                     if (resourceRegExp.test(result.request)) {
+
+                        // Replace path seperators with POSIX path seperators
+                        result.context = result.context.replace(seperatorRegExp, "/")
+
                         // Replace the relative http-request import from core http.
                         if (this.replaceHTTP && result.request === "./http-request") {
                             if (result.context.endsWith("@nativescript/core/http")) {
